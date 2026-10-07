@@ -15,6 +15,9 @@ function controls() {
 }
 async function api(path, options = {}) {
   const response = await fetch(path, {...options, headers: {"Content-Type": "application/json", ...options.headers}});
+  if (!(response.headers.get("Content-Type") || "").includes("application/json")) {
+    throw new Error("Le serveur de jeu n’est pas configuré sur ce site. L’interface est disponible, mais les parties nécessitent le serveur Python.");
+  }
   const data = await response.json();
   if (!response.ok) {
     const error = new Error(data.error || "Le serveur ne répond pas. Réessayez.");

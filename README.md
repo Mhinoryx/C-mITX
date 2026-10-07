@@ -25,6 +25,20 @@ Téléchargement initial : environ 577 Mo. Prévoir 2 Go de disque libre pour le
 
 Si vous avez déjà le fichier officiel : `python prepare_data.py --source C:\chemin\frWac_postag_no_phrase_700_skip_cut50.bin`. Le MD5 publié par l’auteur est vérifié.
 
+## Déploiement de l’interface sur Cloudflare Pages
+
+Pour publier le dépôt via Pages :
+
+- Commande de build : `exit 0` (aucune compilation nécessaire).
+- Répertoire de sortie : `static`.
+- Répertoire racine du projet : laisser vide si le dépôt contient directement ce projet.
+
+`index.html`, `style.css` et `app.js` sont dans le même dossier ; les liens relatifs fonctionnent sur Pages et avec Flask. Après avoir poussé les modifications, redéployer le site.
+
+**Pages ne lance pas `app.py`.** Le CSS et le JavaScript seront servis, mais les routes `/api/game` et `/api/guess` nécessitent le serveur Flask avec le modèle et SQLite. Pour rendre le jeu jouable, faire servir ces routes sur le même domaine par un serveur Python hébergé, par exemple avec un proxy Cloudflare ou un Tunnel vers ce serveur. Un site Pages uniquement statique ne suffit pas. Ne pas publier le dossier racine du dépôt : il contient les données et peut contenir la clé et la base de jeu.
+
+Documentation : https://developers.cloudflare.com/pages/framework-guides/deploy-anything/
+
 ## Fonctionnement
 
 - Même mot pour tous les joueurs de cette instance, renouvelé à minuit **Europe/Paris**, avec gestion des changements d’heure.
