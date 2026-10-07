@@ -1,4 +1,4 @@
-# Cémentix
+# Cém'ITX
 
 Application indépendante Python / JavaScript inspirée de Cémantix. Les températures reposent sur de vrais vecteurs sémantiques, sans appel à l’API du jeu original.
 

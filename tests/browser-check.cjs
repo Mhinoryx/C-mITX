@@ -4,7 +4,7 @@ const os = require('node:os');
 const {spawn} = require('node:child_process');
 const assert = require('node:assert/strict');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cementix-chrome-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cem-itx-chrome-'));
 const chrome = spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=9335', '--user-data-dir=' + profile, 'about:blank'], {windowsHide: true, stdio: 'ignore'});
 let socket;
 const errors = [];

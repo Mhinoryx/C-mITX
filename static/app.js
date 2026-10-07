@@ -129,7 +129,7 @@ $("rules-dialog").addEventListener("click", (event) => {
   }
 });
 $("share-button").addEventListener("click", async () => {
-  const text = `Cémentix · ${game.day}\n🎯 Trouvé en ${game.attempts.length} essais\n🏆 ${game.position === 1 ? "1re" : game.position + "e"} découverte du jour\n${game.attempts.slice(-8).map(emoji).join("")}`;
+  const text = `Cém'ITX · ${game.day}\n🎯 Trouvé en ${game.attempts.length} essais\n🏆 ${game.position === 1 ? "1re" : game.position + "e"} découverte du jour\n${game.attempts.slice(-8).map(emoji).join("")}`;
   try {
     await navigator.clipboard.writeText(text);
     $("share-button").textContent = "Résultat copié ✓";

@@ -22,7 +22,7 @@ def checksum(path):
 def download(path):
     temporary = path.with_suffix(".part")
     print("Téléchargement du modèle frWac (~577 Mo)...", flush=True)
-    request = urllib.request.Request(URL, headers={"User-Agent": "Cementix/1.0"})
+    request = urllib.request.Request(URL, headers={"User-Agent": "CemITX/1.0"})
     with urllib.request.urlopen(request, timeout=120) as response, temporary.open("wb") as target:
         total = int(response.headers.get("Content-Length", 0))
         received, last = 0, 0
