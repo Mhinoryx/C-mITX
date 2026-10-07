@@ -25,9 +25,56 @@ Téléchargement initial : environ 577 Mo. Prévoir 2 Go de disque libre pour le
 
 Si vous avez déjà le fichier officiel : `python prepare_data.py --source C:\chemin\frWac_postag_no_phrase_700_skip_cut50.bin`. Le MD5 publié par l’auteur est vérifié.
 
-## Déploiement du jeu sur Cloudflare Pages
+## Déploiement du jeu sur Cloudflare Workers
 
-Pour publier le dépôt via Pages :
+Pour un projet Cloudflare dont la commande de déploiement est `npx wrangler deploy`, utiliser la configuration `wrangler.jsonc` à la racine du dépôt :
+
+- Commande de build : laisser vide (aucune compilation préalable).
+- Commande de déploiement : `npx wrangler deploy`.
+- Répertoire racine : racine du dépôt.
+- Le nom `c-mitx` dans `wrangler.jsonc` doit correspondre au nom du Worker configuré dans Cloudflare.
+
+`main` désigne `static/_worker.js` comme code du serveur. L’interface est publiée via le binding `ASSETS`. `static/.assetsignore` exclut `_worker.js` et `_routes.json` des fichiers publics, ce qui corrige l’erreur **Uploading a Pages _worker.js file as an asset**. Les routes `/api/*` exécutent le Worker avant la recherche d’un fichier statique. `keep_vars` conserve les variables configurées dans le tableau de bord.
+
+Ajouter `GAME_API_ORIGIN` dans **Settings → Variables and Secrets**, avec l’adresse HTTPS publique du serveur Python (par exemple `https://jeu-api.votre-domaine.fr`), puis redéployer. Un préfixe de chemin est accepté, par exemple `https://vps-a183fa1c.vps.ovh.net/cem-itx` ; le relais lui ajoute `/api/game` ou `/api/guess`. Le build peut réussir sans cette variable, mais le formulaire nécessite ce serveur pour calculer les températures et enregistrer les essais.
+
+Vérification locale sans publication : `npx wrangler deploy --dry-run --outdir artifacts/worker-build`. Prévisualisation : `npx wrangler dev`.
+
+Documentation : [configuration des assets Workers](https://developers.cloudflare.com/workers/static-assets/binding/).
+
+### Serveur permanent sur le VPS
+
+Le serveur Cém’ITX est déployé dans `/opt/cem-itx` sur le VPS Ubuntu `51.195.222.75`, avec Docker Compose et Waitress. Le site utilise `GAME_API_ORIGIN=https://vps-a183fa1c.vps.ovh.net/cem-itx`. Il fonctionne sans cet ordinateur ni Quick Tunnel.
+
+La configuration [deploy/vps/compose.yaml](deploy/vps/compose.yaml) utilise le réseau existant `gamepanel-edge` et le proxy Traefik du panneau OVH. Seules les routes `/cem-itx/api/` sont dirigées vers le jeu. Le certificat HTTPS est géré par ce proxy. Le conteneur redémarre automatiquement avec Docker et conserve ses données dans `/opt/cem-itx/data` : modèle normalisé, vocabulaire, liste de mots, base SQLite et clé de session.
+
+Commandes de gestion sur le VPS :
+
+```bash
+sudo docker compose -f /opt/cem-itx/deploy/vps/compose.yaml ps
+sudo docker compose -f /opt/cem-itx/deploy/vps/compose.yaml logs --tail 100 game
+sudo docker compose -f /opt/cem-itx/deploy/vps/compose.yaml restart game
+# Après transfert des fichiers modifiés :
+sudo docker compose -f /opt/cem-itx/deploy/vps/compose.yaml up -d --build
+```
+
+Le répertoire de données appartient à l’utilisateur du conteneur (UID/GID 10001). Sauvegarder la base avec l’API de sauvegarde SQLite pendant que le jeu tourne ; conserver également `secret.key`, qui permet de retrouver les parties associées aux cookies existants. Les données sont exclues des images Docker et du dépôt Git.
+
+### Alternative : connexion au serveur de cet ordinateur
+
+`connect-online.ps1` permet de revenir à un serveur sur ce PC et remplace la connexion au VPS dans Cloudflare. Après installation des dépendances, de `cloudflared` dans `%LOCALAPPDATA%\CemITX\tools\cloudflared.exe` et authentification de Wrangler, lancer depuis PowerShell :
+
+```powershell
+.\connect-online.ps1
+```
+
+Le script démarre Waitress sur `127.0.0.1:5001` en arrière-plan si nécessaire, ouvre un tunnel HTTPS et configure `GAME_API_ORIGIN` pour le Worker `c-mitx`. Les processus continuent après fermeture du terminal. Il réutilise un tunnel existant qui répond encore. Les journaux et l’état de connexion se trouvent dans `artifacts`, exclu de Git.
+
+Cet ordinateur doit rester allumé et connecté. L’adresse du Quick Tunnel est temporaire et change après son arrêt ; relancer le script reconnecte le Worker. Pour une disponibilité permanente, utiliser un serveur toujours actif et un tunnel permanent. [Documentation des Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+
+## Alternative : Cloudflare Pages
+
+Pour un projet de type Pages (distinct d’un projet Workers) :
 
 - Commande de build : `exit 0` (aucune compilation nécessaire).
 - Répertoire de sortie : `static`.

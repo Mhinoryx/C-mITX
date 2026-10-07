@@ -1,0 +1,11 @@
+{
+  "name": "c-mitx",
+  "main": "static/_worker.js",
+  "compatibility_date": "2026-10-07",
+  "keep_vars": true,
+  "assets": {
+    "directory": "./static",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  }
+}

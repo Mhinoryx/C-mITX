@@ -10,7 +10,7 @@ const originalFetch = globalThis.fetch;
 try {
   assert.equal(await (await worker.fetch(request("/"), env)).text(), "interface");
   assert.equal((await worker.fetch(request("/api/game"), {})).status, 503);
-  for (const badOrigin of ["https://cem-itx.pages.dev", "http://game.example.com", "https://game.example.com/api", "https://user:password@game.example.com"]) {
+  for (const badOrigin of ["https://cem-itx.pages.dev", "http://game.example.com", "https://game.example.com/?token=x", "https://user:password@game.example.com"]) {
     assert.equal((await worker.fetch(request("/api/game"), {...env, GAME_API_ORIGIN: badOrigin})).status, 503);
   }
   assert.equal((await worker.fetch(request("/api/private"), env)).status, 404);
@@ -42,6 +42,14 @@ try {
   }), env);
   assert.equal(guess.status, 409);
   assert.equal((await guess.json()).refresh, true);
+
+  for (const prefix of ["/cem-itx", "/cem-itx/"]) {
+    globalThis.fetch = async (url) => {
+      assert.equal(url.href, origin + "/cem-itx/api/game");
+      return Response.json({day: "2026-10-07"});
+    };
+    assert.equal((await worker.fetch(request("/api/game"), {...env, GAME_API_ORIGIN: origin + prefix})).status, 200);
+  }
 
   globalThis.fetch = async () => new Response("<html>pas une API</html>", {headers: {"Content-Type": "text/html"}});
   assert.equal((await worker.fetch(request("/api/game"), env)).status, 502);

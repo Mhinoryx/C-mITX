@@ -1,0 +1,45 @@
+services:
+  game:
+    build:
+      context: ../..
+      dockerfile: deploy/vps/Dockerfile
+    image: cem-itx-backend:local
+    container_name: cem-itx-backend
+    restart: unless-stopped
+    mem_limit: 2g
+    cpus: 2
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    volumes:
+      - ../../data:/app/data
+    networks:
+      - edge
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/game', timeout=25)"]
+      interval: 60s
+      timeout: 30s
+      start_period: 60s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: gamepanel-edge
+      traefik.http.routers.cemitx.rule: "Host(`vps-a183fa1c.vps.ovh.net`) && PathPrefix(`/cem-itx/api/`)"
+      traefik.http.routers.cemitx.priority: "200"
+      traefik.http.routers.cemitx.entrypoints: websecure
+      traefik.http.routers.cemitx.tls: "true"
+      traefik.http.routers.cemitx.tls.certresolver: le
+      traefik.http.routers.cemitx.middlewares: cemitx-prefix
+      traefik.http.middlewares.cemitx-prefix.stripprefix.prefixes: /cem-itx
+      traefik.http.services.cemitx.loadbalancer.server.port: "8080"
+networks:
+  edge:
+    external: true
+    name: gamepanel-edge

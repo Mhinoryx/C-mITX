@@ -1,0 +1,9 @@
+.git
+.venv
+.wrangler
+__pycache__
+**/__pycache__
+data
+artifacts
+tests
+*.pyc

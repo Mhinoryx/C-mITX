@@ -8,3 +8,4 @@ data/vocabulary.json
 data/*.sqlite3*
 data/secret.key
 artifacts/
+.wrangler/

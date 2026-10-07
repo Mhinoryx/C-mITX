@@ -35,7 +35,7 @@ async function main() {
   await call('Network.enable');
   await call('Network.clearBrowserCookies');
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
-  await call('Page.navigate',{url:'http://127.0.0.1:5000/'});
+  await call('Page.navigate',{url:process.env.GAME_URL || 'http://127.0.0.1:5000/'});
   await until(`document.getElementById('word') && !document.getElementById('word').disabled`);
   assert.equal(await evaluate(`document.getElementById('attempt-count').textContent`),'0');
   const submit=async word=>{

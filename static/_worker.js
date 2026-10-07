@@ -16,9 +16,9 @@ export default {
     let origin;
     try {
       origin = new URL(env.GAME_API_ORIGIN);
-      if (origin.protocol !== "https:" || origin.origin === url.origin || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) throw new Error();
+      if (origin.protocol !== "https:" || origin.origin === url.origin || origin.username || origin.password || origin.search || origin.hash) throw new Error();
     } catch {
-      return error("Le jeu n’est pas encore connecté à son serveur. Configurez GAME_API_ORIGIN dans Cloudflare Pages, puis redéployez le site.", 503);
+      return error("Le jeu n’est pas encore connecté à son serveur. Configurez GAME_API_ORIGIN dans les variables Cloudflare, puis redéployez le site.", 503);
     }
 
     const headers = new Headers({Accept: "application/json"});
@@ -26,7 +26,9 @@ export default {
       if (request.headers.has(name)) headers.set(name, request.headers.get(name));
     }
     try {
-      const upstream = await fetch(new URL(url.pathname, origin), {
+      const upstreamUrl = new URL(origin);
+      upstreamUrl.pathname = origin.pathname.replace(/\/$/, "") + url.pathname;
+      const upstream = await fetch(upstreamUrl, {
         method,
         headers,
         body: method === "POST" ? request.body : undefined,
