@@ -85,6 +85,10 @@ def create_app(data_dir=DATA, semantic_engine=None, test_config=None):
     def javascript():
         return send_from_directory(ROOT / "static", "app.js")
 
+    @app.get("/theme.js")
+    def theme_script():
+        return send_from_directory(ROOT / "static", "theme.js")
+
     @app.get("/static/<path:filename>")
     def assets(filename):
         return send_from_directory(ROOT / "static", filename)

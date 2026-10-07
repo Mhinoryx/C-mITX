@@ -38,6 +38,15 @@ async function main() {
   await call('Page.navigate',{url:process.env.GAME_URL || 'http://127.0.0.1:5000/'});
   await until(`document.getElementById('word') && !document.getElementById('word').disabled`);
   assert.equal(await evaluate(`document.getElementById('attempt-count').textContent`),'0');
+  assert.equal(await evaluate(`document.documentElement.dataset.theme`),'classic');
+  await evaluate(`document.querySelector('[data-theme-choice="dark"]').click()`);
+  assert.equal(await evaluate(`getComputedStyle(document.body).backgroundColor`),'rgb(20, 25, 22)');
+  assert.equal(await evaluate(`document.querySelector('[data-theme-choice="dark"]').getAttribute('aria-pressed')`),'true');
+  await call('Page.reload');
+  await until(`document.getElementById('word') && !document.getElementById('word').disabled`);
+  assert.equal(await evaluate(`document.documentElement.dataset.theme`),'dark');
+  await evaluate(`document.querySelector('[data-theme-choice="classic"]').click()`);
+  assert.equal(await evaluate(`getComputedStyle(document.body).backgroundColor`),'rgb(250, 248, 244)');
   const submit=async word=>{
     await evaluate(`document.getElementById('word').value=${JSON.stringify(word)};document.getElementById('guess-form').requestSubmit()`);
     await until(`!document.getElementById('submit-button').disabled || !document.getElementById('victory').hidden`);
@@ -63,14 +72,20 @@ async function main() {
   const artifacts=path.resolve('artifacts');fs.mkdirSync(artifacts,{recursive:true});
   const screenshot=async name=>{const r=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(artifacts,name),Buffer.from(r.data,'base64'));};
   await screenshot('desktop.png');
+  await evaluate(`document.querySelector('[data-theme-choice="dark"]').click()`);
+  await screenshot('desktop-dark.png');
   for(const width of [390,320]){
     await call('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});
     await sleep(200);
-    assert(await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`),'Débordement horizontal à '+width+'px');
-    if(width===390)await screenshot('mobile.png');
+    for(const theme of ['classic','dark']){
+      await evaluate(`document.querySelector('[data-theme-choice="${theme}"]').click()`);
+      assert(await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`),'Débordement horizontal à '+width+'px, thème '+theme);
+      assert(await evaluate(`(() => {const b=document.getElementById('help-button').getBoundingClientRect();const c=document.querySelector('.theme-choice').getBoundingClientRect();return b.right <= innerWidth && c.right <= b.left;})()`),'Sélecteur de thème chevauché à '+width+'px');
+      if(width===390)await screenshot(theme==='classic'?'mobile.png':'mobile-dark.png');
+    }
   }
   assert.deepEqual(errors,[]);
-  console.log('CHROME_OK: saisie, accents, doublons, erreurs, tri, sauvegarde, règles, écrans 1440/390/320px, aucune erreur JavaScript.');
+  console.log('CHROME_OK: thèmes classique/sombre, préférence conservée, saisie, tri, sauvegarde, règles, écrans 1440/390/320px, aucune erreur JavaScript.');
   await call('Browser.close');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{if(socket)socket.close();chrome.kill();});

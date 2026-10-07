@@ -105,6 +105,7 @@ Documentation : [mode avancé Pages](https://developers.cloudflare.com/pages/fun
 - Essais en SQLite côté serveur. Un cookie signé, valable un an, identifie chaque navigateur. Effacer ce cookie ou changer de navigateur crée un nouveau joueur ; aucune synchronisation entre appareils.
 - Classement par ordre de découverte sur cette instance, indépendant du nombre d’essais. Une transaction SQLite sérialise les victoires simultanées.
 - Tri par température ou dernier essai, règles intégrées, compteur jusqu’à minuit, partage sans révéler le mot.
+- Choix du thème classique ou sombre dans l’en-tête, mémorisé pour ce navigateur.
 
 Le modèle exact, le filtrage et la sélection des mots du site original ne sont pas déterminés par les ressources fournies. Cette application reproduit les mécaniques décrites, avec ses propres mots, scores et classement. Son interface est originale.
 

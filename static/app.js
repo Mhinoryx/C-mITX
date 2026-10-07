@@ -47,7 +47,7 @@ function render() {
     cell(row, a.number);
     cell(row, a.word);
     const temperature = cell(row, format(a.temperature));
-    temperature.style.color = a.won ? "#456b4e" : a.progress >= 900 ? "#be6143" : a.progress ? "#7b8c4a" : "#688998";
+    temperature.style.color = a.won ? "var(--score-won)" : a.progress >= 900 ? "var(--score-hot)" : a.progress ? "var(--score-near)" : "var(--score-cold)";
     const heat = cell(row, "");
     const wrap = document.createElement("div");
     wrap.className = "heat";
