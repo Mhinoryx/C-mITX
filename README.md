@@ -25,7 +25,7 @@ Téléchargement initial : environ 577 Mo. Prévoir 2 Go de disque libre pour le
 
 Si vous avez déjà le fichier officiel : `python prepare_data.py --source C:\chemin\frWac_postag_no_phrase_700_skip_cut50.bin`. Le MD5 publié par l’auteur est vérifié.
 
-## Déploiement de l’interface sur Cloudflare Pages
+## Déploiement du jeu sur Cloudflare Pages
 
 Pour publier le dépôt via Pages :
 
@@ -35,9 +35,18 @@ Pour publier le dépôt via Pages :
 
 `index.html`, `style.css` et `app.js` sont dans le même dossier ; les liens relatifs fonctionnent sur Pages et avec Flask. Après avoir poussé les modifications, redéployer le site.
 
-**Pages ne lance pas `app.py`.** Le CSS et le JavaScript seront servis, mais les routes `/api/game` et `/api/guess` nécessitent le serveur Flask avec le modèle et SQLite. Pour rendre le jeu jouable, faire servir ces routes sur le même domaine par un serveur Python hébergé, par exemple avec un proxy Cloudflare ou un Tunnel vers ce serveur. Un site Pages uniquement statique ne suffit pas. Ne pas publier le dossier racine du dépôt : il contient les données et peut contenir la clé et la base de jeu.
+Le fichier `static/_worker.js` assure le relais des routes `/api/game` et `/api/guess` vers le serveur Python. `static/_routes.json` limite son exécution à l’API. Les cookies de session sont conservés sur le domaine du site, et les réponses de jeu ne sont pas mises en cache.
 
-Documentation : https://developers.cloudflare.com/pages/framework-guides/deploy-anything/
+**Configuration nécessaire pour activer le formulaire :**
+
+1. Démarrer le serveur Python avec les fichiers préparés dans `data`. Il doit rester actif et être accessible en HTTPS, directement ou via un Cloudflare Tunnel permanent. Vérifier que son adresse publique suivie de `/api/game` renvoie du JSON.
+2. Dans Cloudflare, ouvrir **Workers & Pages → votre projet → Settings → Variables and Secrets**. Ajouter `GAME_API_ORIGIN`, avec l’origine publique du serveur, par exemple `https://jeu-api.votre-domaine.fr`. Ne pas ajouter `/api` ni utiliser l’adresse du site Pages lui-même ou `127.0.0.1`. Configurer séparément l’environnement de production et les aperçus si utilisés.
+3. Redéployer le site avec le contenu de `static`, y compris `_worker.js` et `_routes.json`. Pour une intégration Git, pousser aussi ces fichiers dans le dépôt connecté.
+4. Ouvrir `/api/game` sur le domaine Pages : la réponse doit être du JSON avec `day` et `attempts`. Recharger la page puis proposer un mot ; l’essai doit rester après actualisation.
+
+Pages exécute le relais JavaScript, mais ne lance pas `app.py` ni le modèle Python. Sans serveur public et sans `GAME_API_ORIGIN`, le relais renvoie une erreur de configuration (503). Ne pas publier le dossier racine du dépôt : il contient les données et peut contenir la clé et la base de jeu.
+
+Documentation : [mode avancé Pages](https://developers.cloudflare.com/pages/functions/advanced-mode/), [variables d’environnement](https://developers.cloudflare.com/pages/functions/bindings/).
 
 ## Fonctionnement
 
@@ -57,6 +66,7 @@ Le modèle exact, le filtrage et la sélection des mots du site original ne sont
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 node --check static/app.js
+node tests/cloudflare-check.mjs
 # Avec le serveur actif et Chrome installé :
 node tests/browser-check.cjs
 ```
