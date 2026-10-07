@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+data/*.bin
+data/*.part
+data/*.npy
+data/vocabulary.json
+data/*.sqlite3*
+data/secret.key
+artifacts/
