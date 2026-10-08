@@ -9,7 +9,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
-    const method = {"/api/game": "GET", "/api/guess": "POST"}[url.pathname];
+    const method = {"/api/game": "GET", "/api/guess": "POST", "/api/account": "GET", "/api/account/register": "POST", "/api/account/login": "POST", "/api/account/logout": "POST"}[url.pathname];
     if (!method) return error("Cette route de jeu n’existe pas.", 404);
     if (request.method !== method) return error("Cette méthode n’est pas autorisée.", 405);
 
@@ -22,7 +22,7 @@ export default {
     }
 
     const headers = new Headers({Accept: "application/json"});
-    for (const name of ["Content-Type", "Cookie"]) {
+    for (const name of ["Content-Type", "Cookie", "X-CSRF-Token"]) {
       if (request.headers.has(name)) headers.set(name, request.headers.get(name));
     }
     try {

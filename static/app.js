@@ -145,4 +145,75 @@ function tick() {
 setInterval(tick, 1000);
 setInterval(() => {if (!busy && document.visibilityState === "visible") loadGame();}, 60000);
 document.addEventListener("visibilitychange", () => {if (document.visibilityState === "visible") loadGame();});
-loadGame();
+let accountState = null, accountBusy = false, registering = true;
+function showAccount(data) {
+  accountState = data;
+  $("account-status").textContent = data.user ? `Connecté : ${data.user.username}` : "Jouez en invité ou réservez votre pseudo.";
+  $("account-open").hidden = !!data.user;
+  $("account-logout").hidden = !data.user;
+}
+function accountMessage(text = "", error = false) {
+  $("account-message").textContent = text;
+  $("account-message").classList.toggle("error", error);
+}
+$("account-open").addEventListener("click", async () => {
+  $("account-dialog").showModal();
+  accountMessage();
+  try { showAccount(await api("/api/account")); }
+  catch (error) { accountMessage(error.message, true); }
+});
+$("account-close").addEventListener("click", () => $("account-dialog").close());
+$("account-switch").addEventListener("click", () => {
+  registering = !registering;
+  $("account-title").textContent = registering ? "Créer un compte" : "Se connecter";
+  $("account-submit").textContent = registering ? "Créer mon compte" : "Se connecter";
+  $("account-switch").textContent = registering ? "Déjà un compte ? Se connecter" : "Pas encore de compte ? S’inscrire";
+  $("account-password").autocomplete = registering ? "new-password" : "current-password";
+  $("account-password").value = "";
+  accountMessage();
+});
+async function changeAccount(action, payload = {}) {
+  if (accountBusy || busy || refreshing) {
+    accountMessage("Veuillez patienter puis réessayer.");
+    return;
+  }
+  accountBusy = true;
+  busy = true;
+  controls();
+  for (const id of ["account-submit", "account-switch", "account-logout"]) $(id).disabled = true;
+  try {
+    if (!accountState) showAccount(await api("/api/account"));
+    const data = await api(`/api/account/${action}`, {method: "POST", headers: {"X-CSRF-Token": accountState.csrf}, body: JSON.stringify(payload)});
+    showAccount(data);
+    $("account-password").value = "";
+    $("account-dialog").close();
+    game = null;
+    latestWord = null;
+    $("attempts").replaceChildren();
+    $("attempt-count").textContent = "0";
+    $("victory").hidden = true;
+    $("empty-state").hidden = false;
+  } catch (error) {
+    accountMessage(error.message, true);
+    if (!$("account-dialog").open) message(error.message, true);
+    return;
+  } finally {
+    accountBusy = false;
+    busy = false;
+    controls();
+    for (const id of ["account-submit", "account-switch", "account-logout"]) $(id).disabled = false;
+  }
+  await loadGame();
+}
+$("account-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  accountMessage();
+  changeAccount(registering ? "register" : "login", {username: $("account-username").value, password: $("account-password").value});
+});
+$("account-logout").addEventListener("click", () => changeAccount("logout"));
+async function initialize() {
+  try { showAccount(await api("/api/account")); }
+  catch { $("account-status").textContent = "Connexion au compte indisponible. Réessayez via le formulaire."; }
+  await loadGame();
+}
+initialize();

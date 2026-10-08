@@ -97,12 +97,20 @@ Documentation : [mode avancé Pages](https://developers.cloudflare.com/pages/fun
 
 ## Fonctionnement
 
+### Comptes joueurs
+
+Le formulaire « Créer un compte / Se connecter » demande uniquement un pseudo et un mot de passe. Le pseudo comporte 3 à 24 lettres, chiffres, tirets ou underscores ; son unicité est garantie dans SQLite après normalisation Unicode, sans distinction de majuscules. Le mot de passe comporte 8 à 128 caractères et est stocké sous forme de hachage salé scrypt.
+
+L’inscription conserve l’identité et les essais de l’invité. La connexion sur un autre appareil retrouve les parties du compte ; elle ne fusionne pas les essais de l’invité avec ceux du compte. La déconnexion ouvre une nouvelle session invitée. Aucun e-mail, récupération de mot de passe ni classement public par pseudo n’est ajouté à ce stade.
+
+Les comptes sont dans `data/games.sqlite3`, déjà exclu de Git. La table est créée au démarrage sans supprimer les parties existantes. Déployer ensemble le serveur Python et les fichiers `static` pour activer les nouvelles routes `/api/account*`. Les modifications de compte sont protégées par un jeton CSRF ; les tentatives sont limitées à 10 par pseudo sur 15 minutes.
+
 - Même mot pour tous les joueurs de cette instance, renouvelé à minuit **Europe/Paris**, avec gestion des changements d’heure.
 - Mot choisi de façon déterministe parmi les noms singuliers et adjectifs masculins singuliers de `data/targets.txt` présents dans le modèle. La liste peut être enrichie ; sa modification change la sélection quotidienne après redémarrage.
 - Température = 100 × similarité cosinus. Pour les mots ayant plusieurs catégories grammaticales, la meilleure similarité est retenue ; les catégories du secret sont limitées aux noms et adjectifs.
 - Les 999 voisins les plus proches sont classés de 999 à 1 ‰. Le secret vaut 1 000 ‰ et 100 °C. Les ex æquo sont départagés alphabétiquement. Les voisins incluent aussi des verbes et adverbes lemmatisés.
 - Accents conservés, casse ignorée, Unicode normalisé. Les mots inconnus et doublons ne consomment pas d’essai.
-- Essais en SQLite côté serveur. Un cookie signé, valable un an, identifie chaque navigateur. Effacer ce cookie ou changer de navigateur crée un nouveau joueur ; aucune synchronisation entre appareils.
+- Essais en SQLite côté serveur. Un cookie signé, valable un an, identifie chaque navigateur. En mode invité, effacer ce cookie ou changer de navigateur crée un nouveau joueur. Avec un compte, la connexion retrouve les parties sur les autres appareils.
 - Classement par ordre de découverte sur cette instance, indépendant du nombre d’essais. Une transaction SQLite sérialise les victoires simultanées.
 - Tri par température ou dernier essai, règles intégrées, compteur jusqu’à minuit, partage sans révéler le mot.
 - Choix du thème classique ou sombre dans l’en-tête, mémorisé pour ce navigateur.

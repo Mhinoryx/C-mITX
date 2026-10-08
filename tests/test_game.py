@@ -120,6 +120,23 @@ class GameTests(unittest.TestCase):
         self.assertEqual(len(restarted.get("/api/game").json["attempts"]), 1)
         self.assertEqual(self.app.test_client().get("/api/game").json["attempts"], [])
 
+    def test_account_keeps_guest_victory_and_restores_it_on_another_device(self):
+        self.guess(self.other)
+        original = self.guess(self.target).json
+        token = self.client.get("/api/account").json["csrf"]
+        registered = self.client.post("/api/account/register", json={"username": "Joueur", "password": "secret-test-123"}, headers={"X-CSRF-Token": token})
+        self.assertEqual(registered.status_code, 201)
+        self.client.post("/api/account/logout", headers={"X-CSRF-Token": registered.json["csrf"]})
+        self.assertEqual(self.client.get("/api/game").json["attempts"], [])
+        other = self.app.test_client()
+        token = other.get("/api/account").json["csrf"]
+        response = other.post("/api/account/login", json={"username": "JOUEUR", "password": "secret-test-123"}, headers={"X-CSRF-Token": token})
+        self.assertEqual(response.status_code, 200)
+        restored = other.get("/api/game").json
+        self.assertEqual(restored["attempts"], original["attempts"])
+        self.assertEqual(restored["position"], original["position"])
+        self.assertEqual(restored["solved"], 1)
+
     def test_simultaneous_victories_have_unique_positions(self):
         clients = [self.app.test_client() for _ in range(6)]
         for client in clients:

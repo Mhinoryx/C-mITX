@@ -51,6 +51,18 @@ try {
     assert.equal((await worker.fetch(request("/api/game"), {...env, GAME_API_ORIGIN: origin + prefix})).status, 200);
   }
 
+  for (const action of ["register", "login", "logout"]) {
+    globalThis.fetch = async (url, options) => {
+      assert.equal(url.href, origin + "/api/account/" + action);
+      assert.equal(options.headers.get("X-CSRF-Token"), "test-csrf");
+      assert.equal(options.headers.get("Cookie"), "session=test");
+      return Response.json({user: null});
+    };
+    assert.equal((await worker.fetch(request("/api/account/" + action, {
+      method: "POST", headers: {"X-CSRF-Token": "test-csrf", Cookie: "session=test"},
+    }), env)).status, 200);
+  }
+
   globalThis.fetch = async () => new Response("<html>pas une API</html>", {headers: {"Content-Type": "text/html"}});
   assert.equal((await worker.fetch(request("/api/game"), env)).status, 502);
   globalThis.fetch = async () => {throw new Error("offline");};
